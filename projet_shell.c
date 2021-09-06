@@ -41,7 +41,7 @@ int main() {
 	noyau = fork();
 	if (noyau != 0){ //PERE = SHELL
 		printf("JE SUIS LE SHELL, BONJOUR !\n");
-		char n;
+		ssize_t n;
 		char res_received[nbuff];
 		
 		//CREATE SHM
@@ -49,10 +49,7 @@ int main() {
 		mem = shmat(shmid, NULL, 0);
 
 		do {
-			
-			//SEND SIGNAL TO SCREEN
-			rep = kill((int)pid_screen, SIGSTOP);
-			printf("Rep kill : %d\n", rep);
+
 
 			//ASK FOR COMMANDE			
 			printf("Shell - Quelle est votre commande ? (\"stop\" pour fermer le terminal)\n");
@@ -61,8 +58,7 @@ int main() {
 			printf("Shell - Je suis le pere et j'envoie au shell : %s\n", commande);
 				printf("1 %s", commande);
 
-			if (*commande != "stop"){
-				printf("2 %s", commande);
+			if (strcmp(commande, "stop") != 0){
 				//SEND COMMANDE TO NOYAU
 				write(fdsShell[1], &commande, strlen(commande));
 
@@ -73,21 +69,25 @@ int main() {
 
 				//SEND TO SCREEN
 				strcpy(mem, res_received);
-
-				
+				//rep = kill(atoi(pid_screen), SIGCONT);
+							
+			//SEND SIGNAL TO SCREEN
+			printf("%d", atoi(pid_screen));
+			rep = kill(atoi(pid_screen), SIGHUP);
+			printf("Rep kill : %d\n", rep);
 			} else {
-				printf("IL Y A EU UN STOOOP! 1");
 				return (0);
 			}
 
-		} while (commande != "stop");
-		printf("IL Y A EU UN STOOOP! 2");
-		exit (0);
-		//wait(&status);
+		} while (strcmp(commande, "stop") != 0);
+		
+		wait(&status);
+		return (0);
+
 
 	} else { //FILS = NOYAU
 		char res_received[nbuff];
-		char n;
+		ssize_t n;
 		
 		//READ IN PIPE
 		n = read(fdsShell[0], res_received, nbuff-1);
